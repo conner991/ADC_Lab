@@ -1,8 +1,8 @@
 #include <Arduino.h>
 
-volatile unsigned char *myADMUX = (unsigned char *);
-volatile unsigned char *myADCSRA = (unsigned char *);
-volatile unsigned char *myADCSRB = (unsigned char *);
+volatile unsigned char *myADCSRA = (unsigned char *)0x7A;
+volatile unsigned char *myADCSRB = (unsigned char *)0x7B;
+volatile unsigned char *myADMUX = (unsigned char *)0x7C;
 volatile unsigned int *myADCDATA = (unsigned int *);
 
 void setup()
@@ -24,19 +24,29 @@ void adcInit()
 {
   // Set up the A register
   // Set bit 7 to 1 to enable the ADC
+  *myADCSRA |= 0x80;
   // clear bit 5 to 0 to disable the ADC trigger mode
+  *myADCSRA &= 0xDF;
   // clear bit 3 to 0 to disable the ADC interrupt
-  // clear bits 2-0 to 0 to set prescalar selection to slow reading
+  *myADCSRA &= 0xF7;
+  // clear bits 2-0 to 0 to set prescalar selection to slow reading (Division Factor of 2)
+  *myADCSRA &= 0xF8;
 
   // Setup the B register
   // clear bit 3 to 0 to reset the channel and gain bits
+  *myADCSRB &= 0xF7;
   // clear bits 2-0 to 0 to set free running mode
+  *myADCSRB &= 0xF8;
 
   // set up the MUX register
-  // clear bit 7 to 0 for AVCC analog reference
-  // set bit 6 to 1 for AVCC analog reference
+  // clear bit 7 to 0 for AREF, internal Vref turned off
+  *myADMUX &= 0x7F;
+  // set bit 6 to 1 for AVCC analog reference, external capacitor at AREF pin
+  *myADMUX |= 0x40;
   // clear bit 5 to 0 for right adjust result
-  // cleat bits 4-0 to 0 to reset the channel and gain bits
+  *myADMUX &= 0xDF;
+  // clear bits 4-0 to 0 to reset the channel and gain bits
+  *myADMUX &= 0xE0;
 }
 
 unsigned int adcRead(unsigned char adcChannelNum)

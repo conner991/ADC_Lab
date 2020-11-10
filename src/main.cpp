@@ -3,7 +3,11 @@
 volatile unsigned char *myADCSRA = (unsigned char *)0x7A;
 volatile unsigned char *myADCSRB = (unsigned char *)0x7B;
 volatile unsigned char *myADMUX = (unsigned char *)0x7C;
-volatile unsigned int *myADCDATA = (unsigned int *);
+volatile unsigned int *myADCDATA = (unsigned int *)0x78;
+
+// Prototypes
+void adcInit();
+unsigned int adcRead(unsigned char adcChannelNum);
 
 void setup()
 {
@@ -15,7 +19,11 @@ void setup()
 void loop()
 {
   // Get the reading from the ADC
-  unsigned int adcReading = adcRead(0);
+  unsigned int adcReading = adcRead(5);
+
+  // Delay
+  delay(250);
+
   // Print it to the serial port
   Serial.println(adcReading);
 }
@@ -52,10 +60,10 @@ void adcInit()
 unsigned int adcRead(unsigned char adcChannelNum)
 {
   // clear the channel selection bits (MUX 4:0)
-  // On which register?
+  *myADMUX &= 0xE0;
 
   // clear the channel selection bits (MUX 5)
-  // On which register?
+  *myADCSRB &= 0xF7;
 
   // set the channel number
   if (adcChannelNum > 7)
@@ -63,18 +71,20 @@ unsigned int adcRead(unsigned char adcChannelNum)
     // set the channel selection bits, but remove the most significant bit (bit 3)
     adcChannelNum -= 8;
 
-    // Set MUX bit 5
-    // On which register?
+    // Set MUX 5
+    *myADCSRB |= 0x08;
   }
 
   // Set the channel selection bits
   *myADMUX += adcChannelNum;
 
   // Set bit 6 of ADCSRA to 1 to start a conversion
+  *myADCSRA |= 0x40;
 
   // Wait for the conversion to complete
   while ((*myADCSRA & 0x40) != 0)
-    // return the result in the ADC data register
+    ;
 
-    return myADCDATA;
+  // return the result in the ADC data register
+  return *myADCDATA;
 }
